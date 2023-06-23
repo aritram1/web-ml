@@ -6,8 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "nodemon server/server.js",
-    "clean": "rm -r ./dist/ --force",
-    "move" : "mkdir dist && cp ./server/static/index.html ./dist/index.html",
+    "clean": "rm -r ./docs/ --force",
+    "move" : "mkdir docs && cp ./server/static/index.html ./docs/index.html",
     "build": "npm run clean && npm run move"
   },
   "nodemonConfig": {
