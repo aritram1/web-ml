@@ -8,7 +8,7 @@
     <div class="container">
       <h1>TensorFlow.js example</h1>
       <input class="btn" type="button" value="Start a sequential model" />
-      <a href="http://localhost:3000/">ReStart</a> 
+      <input class="restartBtn" type="button" value="Restart" />
       <div class="gridContainer">
         <div class="title"></div>
         <canvas id="chart"></canvas>
@@ -54,6 +54,7 @@
     // Get all the elements that will need a listener or need an update
     let titleDiv = document.querySelector(".title");
     let btn = document.querySelector(".btn");
+    let restartBtn = document.querySelector(".restartBtn");
     let container = document.querySelector(".container");
 
     // Define a simple sequential model for a demonstration
@@ -63,6 +64,11 @@
     model.compile({ optimizer: "sgd", loss: "meanSquaredError" });
 
     // Add listener to the elements
+
+    // Event listener for `Restart` button so it can respond to `click` and reload the page
+    restartBtn.addEventListener('click', ()=>{
+      window.location.reload();
+    });
     
     // Event listener for button to respond to clicks
     btn.addEventListener("click", () => {
