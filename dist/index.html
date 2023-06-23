@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <title>TensorFlow.js browser example</title>
+  </head>
+  <body>
+    <div class="container">
+      <h1>TensorFlow.js example</h1>
+      <input class="btn" type="button" value="Start a sequential model" />
+      <a href="http://localhost:3000/">ReStart</a> 
+      <div class="gridContainer">
+        <div class="title"></div>
+        <canvas id="chart"></canvas>
+      </div>
+    </div>
+  </body>
+
+  <!-- Styles are added -->
+  <style>
+    .btn{
+      margin: 5px;
+    }
+    body{
+      margin: 5px;  
+    }
+    .gridContainer{
+      margin-top: 10px;
+      display: flex;
+    }
+    .title{
+      font-family: consolas;
+    }
+    .each {
+      height: 20px;
+      width: 350px;
+      margin: 5px;
+      padding: 2px;
+      border: 1px solid grey;
+      border-radius: 5px;
+    }
+  </style>
+  
+  <!-- script -->
+  <!-- Load TensorFlow.js from a script tag,  The script tag makes `tf` available as a global variable.-->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.min.js"></script>
+  <script defer>
+
+    const EPOCH_COUNT = 100;
+
+    let result = [];
+
+    // Get all the elements that will need a listener or need an update
+    let titleDiv = document.querySelector(".title");
+    let btn = document.querySelector(".btn");
+    let container = document.querySelector(".container");
+
+    // Define a simple sequential model for a demonstration
+    const model = tf.sequential();
+    model.add(tf.layers.dense({ units: EPOCH_COUNT, activation: "relu", inputShape: [10] }));
+    model.add(tf.layers.dense({ units: 1, activation: "linear" }));
+    model.compile({ optimizer: "sgd", loss: "meanSquaredError" });
+
+    // Add listener to the elements
+    
+    // Event listener for button to respond to clicks
+    btn.addEventListener("click", () => {
+      titleDiv.innerHTML = "";
+
+      const xs = tf.randomNormal([EPOCH_COUNT, 10]);
+      const ys = tf.randomNormal([EPOCH_COUNT, 1]);
+
+      // Train the model.
+      model.fit(xs, ys, {
+        epochs: EPOCH_COUNT,
+        callbacks: {
+          // after every repetition send the data in event so it can be collated at listener
+          onEpochEnd: (epoch, log) => {
+            let ev = new CustomEvent("log", {
+              detail: {
+                epoch: epoch,
+                loss: log.loss
+              }
+            });
+            container.dispatchEvent(ev);
+            // After the data is sent update the data in the page
+            showResultInPage(epoch, log.loss);
+          }
+        }
+      });
+    });
+
+    // Event listener so `container` element can respond to `log` events that are `bubbled`
+    container.addEventListener("log", (e) => {
+      let detail = {
+        'epoch' : e.detail.epoch,
+        'loss' : parseFloat(e.detail.loss.toFixed(2))
+      };
+      console.log('Received' + JSON.stringify(detail));
+      // all log events will be captured inside the `result` array
+      result.push(detail);
+      
+      // Generate the chart once the epoch size is reached
+      if(result.length == EPOCH_COUNT){
+        generateChart(result);
+      }
+    });
+
+    // This function updates the result data, in the page
+    function showResultInPage(epoch, loss){
+      titleDiv.innerHTML = titleDiv.innerHTML + `<div class="each">Epoch : ${epoch}, Loss : ${loss}</div>`;
+    }
+
+    // This function generates the chart from the `result` data
+    function generateChart(result){
+      const chartCanvas = document.getElementById("chart");
+      new Chart(chartCanvas, {
+        type: "bar",
+        data: {
+          labels: result.map((entry) => entry.epoch), //x axis labels are generated
+          datasets: [
+            {
+              label: "Loss",
+              data: result.map((entry) => entry.loss), // y axis values are extracted
+              backgroundColor: "rgba(75, 192, 192, 0.8)",
+              borderColor: "rgba(75, 192, 192, 1)",
+              borderWidth: 1,
+            },
+          ],
+        },
+        options: {
+          scales: {
+            y: {
+              beginAtZero: false,
+            },
+          },
+        }
+      });
+    }
+  </script>
+</html>

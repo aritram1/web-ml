@@ -5,7 +5,10 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon server/server.js"
+    "start": "nodemon server/server.js",
+    "clean": "rm -r ./dist/ --force",
+    "move" : "mkdir dist && cp ./server/static/index.html ./dist/index.html",
+    "build": "npm run clean && npm run move"
   },
   "nodemonConfig": {
     "watch": "server/",
