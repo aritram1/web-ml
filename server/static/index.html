@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <title>TensorFlow.js browser example</title>
+  </head>
+  <body>
+    <div class="container">
+      <h1>TensorFlow.js example</h1>
+      <input class="btn" type="button" value="Start" />
+      <a href="http://localhost:3000/">Restart</a>
+      <div class="grid">
+        <div class="title"></div>
+        <canvas id="chart">Diagram</canvas>
+      </div>
+    </div>
+  </body>
+
+  <style>
+    .grid{
+      margin: 10px;
+      display: flex;
+    }
+    .title{
+      font-family: Consolas;
+      font-weight: 5;
+    }
+    .each {
+      height: 20px;
+      width: 400px;
+      margin: 3px;
+      padding: 2px;
+      border: 1px solid grey;
+      border-radius: 5px;
+    }
+  </style>
+  
+  <!-- script -->
+  <!-- Load TensorFlow.js from a script tag,  The script tag makes `tf` available as a global variable.-->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.min.js"></script>
+  <script defer>
+
+    const EPOCH_COUNT = 100;
+
+    let result = [];
+
+    // Get the elements
+    let titleDiv = document.querySelector(".title");
+    let btn = document.querySelector(".btn");
+
+    let container = document.querySelector(".container");
+    container.addEventListener("log", (e) => {
+      let detail = {
+        'epoch' : e.detail.epoch,
+        'loss' : Math.round(e.detail.loss*100)
+      };
+      console.log('Received' + JSON.stringify(detail));
+      result.push(detail);
+      
+      // If it's the last element
+      if(result.length == EPOCH_COUNT){
+        generateChart(result);
+      }
+    });
+
+    // Define a simple model.
+    const model = tf.sequential();
+    model.add(
+      tf.layers.dense({ units: EPOCH_COUNT, activation: "relu", inputShape: [10] })
+    );
+    model.add(tf.layers.dense({ units: 1, activation: "linear" }));
+    model.compile({ optimizer: "sgd", loss: "meanSquaredError" });
+
+    // Add event listener
+    btn.addEventListener("click", () => {
+      titleDiv.innerHTML = "";
+
+      const xs = tf.randomNormal([EPOCH_COUNT, 10]);
+      const ys = tf.randomNormal([EPOCH_COUNT, 1]);
+
+      // Train the model.
+      model.fit(xs, ys, {
+        epochs: EPOCH_COUNT,
+        callbacks: {
+          onEpochEnd: (epoch, log) => {
+            let ev = new CustomEvent("log", {
+              detail: {
+                epoch: epoch,
+                loss: log.loss
+              }
+            });
+            container.dispatchEvent(ev);
+            showResultInPage(epoch, log.loss);
+          }
+        }
+      });
+    });
+
+    function showResultInPage(epoch, loss){
+      titleDiv.innerHTML = titleDiv.innerHTML + `<div class="each">Epoch : ${epoch}, Loss : ${log.loss}</div>`;
+    }
+
+    function generateChart(result){
+      const chartCanvas = document.getElementById("chart");
+      new Chart(chartCanvas, {
+        type: "bar",
+        data: {
+          labels: result.map((entry) => entry.epoch),
+          datasets: [
+            {
+              label: "Loss",
+              data: result.map((entry) => entry.loss),
+              backgroundColor: "rgba(75, 192, 192, 0.9)",
+              borderColor: "rgba(75, 192, 192, 1)",
+              borderWidth: 1,
+            },
+          ],
+        },
+        options: {
+          scales: {
+            y: {
+              beginAtZero: false,
+            },
+          },
+        }
+      });
+    }
+  </script>
+</html>
